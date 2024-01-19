@@ -3,6 +3,8 @@
         "stat.h": "c",
         "types.h": "c",
         "stdio.h": "c",
-        "errno.h": "c"
+        "errno.h": "c",
+        "fcntl.h": "c",
+        "unistd.h": "c"
     }
 }
