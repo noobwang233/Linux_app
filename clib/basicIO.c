@@ -16,15 +16,27 @@
 
 int main(int argc, char *argv[])
 {
-    FILE * file1;
+    FILE *file1, *file2;
     int retval;
     unsigned char buf[1024];
 
     file1 = fopen(argv[1],"r");
     ASSERT_FILE(file1);
+    file2 = fopen(argv[2],"w+");
+    ASSERT_FILE(file2);
 
     retval = fseek(file1, 500, SEEK_SET);
     ASSERT(retval);
 
+    retval = fread(buf, 1,sizeof(buf),file1);
+    ASSERT(retval);
 
+    retval = fwrite(buf, 1,sizeof(buf),file2);
+    ASSERT(retval);
+
+    retval = fclose(file1);
+    ASSERT(retval);
+    retval = fclose(file2);
+    ASSERT(retval);
+    exit(0);
 }
