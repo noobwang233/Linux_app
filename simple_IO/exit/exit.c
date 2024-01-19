@@ -21,7 +21,7 @@ static void fun(const char* file)
 //return 只能在main函数中退出程序，而exit可以在任何函数里退出程序
 int main(int argc, char *argv[])
 {
-    int retvalue;
+    int retval;
     int fd;
 
     fun(argv[1]);
