@@ -12,7 +12,8 @@
 #include <fcntl.h> 
 #include <unistd.h> 
 
-#define ASSERT(x) if((x) < 0){return x;}
+#define ASSERT(x) do{if((x) < 0){return x;}}while (0)
+
 
 int main(int argc, char *argv[])
 {
@@ -22,9 +23,9 @@ int main(int argc, char *argv[])
     unsigned char buff[1024];
 
     fd1 = open(argv[1], O_RDONLY);
-    ASSERT(fd1)
+    ASSERT(fd1);
     fd2 = open(argv[2], O_CREAT | O_RDWR, S_IRWXU | S_IROTH | S_IRGRP);
-    ASSERT(fd2)
+    ASSERT(fd2);
 
     oft = lseek(fd1, 500, SEEK_SET);
     if(oft != 500)
@@ -48,8 +49,8 @@ int main(int argc, char *argv[])
     }
 
     retvalue = close(fd1);
-    ASSERT(retvalue)
+    ASSERT(retvalue);
     retvalue = close(fd2);
-    ASSERT(retvalue)
+    ASSERT(retvalue);
     return 0;
 }
