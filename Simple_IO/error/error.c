@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <string.h>
 
-#define ASSERT(x) do{if((x) < 0){return x;}}while (0)
+#define ASSERT(x) do{if((x) < 0){ perror(""); return x;}}while (0)
 
 int main(int argc, char *argv[])
 {
@@ -28,5 +28,11 @@ int main(int argc, char *argv[])
     fd = open(argv[1], O_RDONLY);
     perror("This is ouput of perror:\n");
 
+    //ASSERT
+    printf("ASSERT:\n");
+    fd = open(argv[1], O_RDONLY);
+    ASSERT(fd);
+
+    printf("NEXT\n");
     return 0;
 }
