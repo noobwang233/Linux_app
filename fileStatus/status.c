@@ -33,6 +33,8 @@
                                         if((st_mode & S_IXOTH) == S_IXOTH){printf("others has execute permission\n");} };\
                                 }while (0)
 
+
+
 int main(int argc, char *argv[])
 {
     int retval;
