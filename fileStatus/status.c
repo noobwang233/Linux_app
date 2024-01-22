@@ -4,7 +4,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
-
+#include <time.h>
 #define ASSERT(x)           do{if((x) < 0){ perror(""); exit(errno);}}while (0)
 #define CHECKFILETYPE(st_mode)  do{                                                                               \
                                 if((st_mode & S_IFSOCK) == S_IFSOCK){printf("It is socket file\n");}          \
@@ -51,6 +51,19 @@ int main(int argc, char *argv[])
     CHECKFILEPERMISSION(buf.st_mode);
     /*(3)获取文件的时间属性，包括文件最后被访问的时间、文件内容最后被修改的时间以及文件状态最后被改变的时间，
          并使用字符串形式将其打印出来，包括时间和日期、表示形式自定。*/
+    struct tm result;
+    localtime_r(&buf.st_atim.tv_sec, &result);
+    char buffer[100];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &result);
+    printf("access time: %s\n", buffer);
+
+    localtime_r(&buf.st_mtim.tv_sec, &result);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &result);
+    printf("modify time: %s\n", buffer);
+
+    localtime_r(&buf.st_ctim.tv_sec, &result);
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &result);
+    printf("change time: %s\n", buffer);
 
     exit(0);
 }
