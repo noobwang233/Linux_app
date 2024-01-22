@@ -1,10 +1,12 @@
 #include <sys/types.h> 
 #include <sys/stat.h> 
-#include <unistd.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <fcntl.h> 
+#include <unistd.h> 
+
 #define ASSERT(x)           do{if((x) < 0){ perror(""); exit(errno);}}while (0)
 #define CHECKFILETYPE(st_mode)  do{                                                                               \
                                 if((st_mode & S_IFSOCK) == S_IFSOCK){printf("It is socket file\n");}          \
@@ -40,7 +42,11 @@ int main(int argc, char *argv[])
     int retval;
     struct stat buf;
 
-    retval = stat(argv[1], &buf);
+    //retval = stat(argv[1], &buf);
+    //fstat
+    int fd = open(argv[1], O_RDWR);
+    ASSERT(fd);
+    retval = fstat(fd, &buf);
     ASSERT(retval);
 
     //(1)获取文件的inode节点编号以及文件大小，并将它们打印出来。
