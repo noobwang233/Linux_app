@@ -10,9 +10,11 @@
 #include <sys/stat.h> 
 #include <fcntl.h> 
 #include <unistd.h> 
+#include <stdlib.h>
+#include <string.h>
 
 #define ASSERT(x) do{if((x) < 0){return x;}}while (0)
-#define SETBUF(buf, x) do{ for(unsigned int i = 0; i < sizeof(buf); i++){ (buf)[i] = (x); }}while(0)
+#define SETBUF(buf, x) do{memset(buf, x, sizeof(buf));}while(0)
 
 int main(int argc, char *argv[])
 {
