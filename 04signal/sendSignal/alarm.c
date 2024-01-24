@@ -13,10 +13,9 @@ static void sigHandler(int sig)
 }
 
 
-int main()
+int main(int argc, char *argv[])
 {
     sig_t sig;
-
 
     sig = signal(SIGALRM, sigHandler);
     if(sig == SIG_ERR)
@@ -26,8 +25,8 @@ int main()
     }
 
     // 让内核 6s 之后向本进程发送SIGALRM信号
-    alarm(6);
-    printf("start\n");
+    alarm(atoi(argv[1]));
+    printf("start sleep %d seconds\n", atoi(argv[1]));
 
     for(;;)
         sleep(1);
