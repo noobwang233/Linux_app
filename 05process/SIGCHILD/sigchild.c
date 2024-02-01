@@ -41,11 +41,11 @@ int main(int argc, char *argv[])
         printf("error usage, usage %s <child process num> <father process count>\n", argv[0]);
 
     /* 为SIGCHLD信号绑定处理函数 */ 
-    sigemptyset(&sig.sa_mask);
+    sigemptyset(&sig.sa_mask);//清空掩码
     sig.sa_handler = handle_child; 
     sig.sa_flags = 0;
     if (-1 == sigaction(SIGCHLD, &sig, NULL)) 
-    { 
+    {
         perror("sigaction error"); 
         exit(-1); 
     }
