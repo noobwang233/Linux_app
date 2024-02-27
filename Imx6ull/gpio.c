@@ -6,41 +6,49 @@
                                         printf("usage error, usage: %s %s gpiox %s\n", argv[0],\
                                                 (((cmd) == NULL) ? "<config/write/read/trigger>" : cmd), \
                                                 (((value) == NULL) ? "<value>" : value));\
-                                        if(cmd != NULL)\
-                                            free(cmd);\
-                                        if(value != NULL)\
-                                            free(value);\
                                     }while(0)
 
-static int CheckArg(int argc, char *argv[], int cmd, int value);
+static int CheckArg(int argc, char *argv[], int cmd, int value)
 {
-    char *cmd;
-    char *value;
+    char *cmds = NULL;
+    char *values = NULL;
 
+    if(argc >= 3)
+    {
+
+    }
+    else
+    {
+        goto USAGEERROR;
+    }
 
     return 0;
 
-ERROR:
-    USAGE_ERROR(cmd, value);
+USAGEERROR:
+    USAGE_ERROR(cmds, values);
+//MALLOC_ERROR
+    if(cmds != NULL)
+        free(cmds);
+    if(values != NULL)
+        free(values);
     return -1;
 }
 
 
 int main(int argc, char *argv[])
 {
-    int ret;
-
+    int ret, cmd, value;
 
     ret = CheckArg(argc, argv, cmd, value);
     if(ret != 0)
     {
-
+        printf("check args error, exit\n");
         exit(1);
     }
-    if (strcmp(cmd, "")) 
-    {
+    // if (strcmp(cmd, "")) 
+    // {
 
-    }
+    // }
 
     exit(0);
 }
