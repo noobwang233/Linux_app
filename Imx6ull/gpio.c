@@ -5,6 +5,18 @@
 #define WRITE_CMD   1
 #define READ_CMD    2
 #define TRIGGER_CMD 3
+
+#define CONFIG_VALUE_IN  0
+#define CONFIG_VALUE_OUT 1
+
+#define GPIO_VALUE_LOW  0
+#define GPIO_VALUE_HIGH 1
+
+#define TRIGGER_VALUE_NONE      0
+#define TRIGGER_VALUE_RISING    1
+#define TRIGGER_VALUE_FALLING   2
+#define TRIGGER_VALUE_BOTH      3
+
 #define USAGE_ERROR(cmd, value) do{ \
                                         printf("usage error, usage: %s %s gpiox %s\n", argv[0],\
                                                 (((cmd) == NULL) ? "<config/write/read/trigger>" : cmd), \
