@@ -12,19 +12,35 @@
                                             free(value);\
                                     }while(0)
 
+static int CheckArg(int argc, char *argv[], int cmd, int value);
+{
+    char *cmd;
+    char *value;
+
+
+    return 0;
+
+ERROR:
+    USAGE_ERROR(cmd, value);
+    return -1;
+}
+
+
 int main(int argc, char *argv[])
 {
     int ret;
-    char *cmd;
-    char *value;
+
 
     ret = CheckArg(argc, argv, cmd, value);
     if(ret != 0)
     {
-        USAGE_ERROR(cmd, value);
+
         exit(1);
     }
+    if (strcmp(cmd, "")) 
+    {
 
+    }
 
     exit(0);
 }
