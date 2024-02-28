@@ -11,17 +11,6 @@
 #define CMD_READ    2
 #define CMD_TRIGGER 3
 
-#define CONFIG_VALUE_IN  0
-#define CONFIG_VALUE_OUT 1
-
-#define GPIO_VALUE_LOW  0
-#define GPIO_VALUE_HIGH 1
-
-#define TRIGGER_VALUE_NONE      0
-#define TRIGGER_VALUE_RISING    1
-#define TRIGGER_VALUE_FALLING   2
-#define TRIGGER_VALUE_BOTH      3
-
 #define GPIO_NUM_MAX 160
 #define GPIO_NUM_MIN 0
 
@@ -227,7 +216,7 @@ FREE_MALLOC:
     return -1;
 }
 
-static int GpioTrigger(char *gpios, char *value)
+static int GpioWork(char *gpios, char *value)
 {
     int ret;
     char *pathname;
@@ -277,7 +266,7 @@ int main(int argc, char *argv[])
     switch (cmd) 
     {
         case CMD_TRIGGER:
-            ret = GpioTrigger(argv[2], argv[3]);
+            ret = GpioWork(argv[2], argv[3]);
         break;
         // case CMD_CONFIG:
         //     ret = GpioConfig(gpios, value);
