@@ -5,8 +5,10 @@
 #include <unistd.h>
 #include <sys/types.h> 
 #include <sys/stat.h>
+#include <poll.h>
 
-#define CMD_CONFIG  0
+#define CMD_CONFIG_DIR  0
+#define CMD_CONFIG_ACT  5
 #define CMD_WRITE   1
 #define CMD_READ    2
 #define CMD_TRIGGER 3
@@ -64,13 +66,21 @@ static int CheckArg(int argc, char *argv[], int *cmd)
         else if (!strcmp(argv[1], "config")) 
         {
             cmds = argv[1];
-            *cmd = CMD_CONFIG;
 
-            if(strcmp(argv[3], "in") && strcmp(argv[3], "out"))
+            if(!strcmp(argv[3], "in") || !strcmp(argv[3], "out"))
             {
-                values = "<in/out>";
+                *cmd = CMD_CONFIG_DIR;
+            }
+            else if (!strcmp(argv[3], "active_low") || !strcmp(argv[3], "active_high")) 
+            {
+                *cmd = CMD_CONFIG_ACT;
+            }
+            else 
+            {
+                values = "<in/out/active_low/active_high>";
                 goto USAGEERROR;
             }
+            
         }
         else if (!strcmp(argv[1], "trigger")) 
         {
@@ -229,20 +239,31 @@ static int GpioWork(char *gpios, char *value, int cmd)
 
     switch (cmd) 
     {
-        case CMD_CONFIG:
+        case CMD_CONFIG_DIR:
             filename = "/direction";
+        break;
+        case CMD_CONFIG_ACT:
+            filename = "/active_low";
+            if(!strcmp(value, "active_low"))
+            {
+                value = "1";
+            }
+            else 
+            {
+                value = "0";
+            }
         break;
         case CMD_TRIGGER:
             filename = "/edge";
         break;
         case CMD_WRITE:
-            ret = GpioWork(gpios, "out", CMD_CONFIG);
+            ret = GpioWork(gpios, "out", CMD_CONFIG_DIR);
             if(ret)
                 return -1;
             filename = "/value";
         break;
         case CMD_READ:
-            ret = GpioWork(gpios, "in", CMD_CONFIG);
+            ret = GpioWork(gpios, "in", CMD_CONFIG_DIR);
             if(ret)
                 return -1;
             filename = "/value";
@@ -266,7 +287,8 @@ static int GpioWork(char *gpios, char *value, int cmd)
     //printf("file pathname = %s\n", pathname);
     switch (cmd) 
     {
-        case CMD_CONFIG:      
+        case CMD_CONFIG_DIR:
+        case CMD_CONFIG_ACT:
         case CMD_TRIGGER:
         case CMD_WRITE:
             fd = open(pathname, O_WRONLY);
@@ -299,9 +321,10 @@ static int GpioWork(char *gpios, char *value, int cmd)
                 }
                 printf("%s value = %c\n", gpios, read_value);
             }
-            else 
+            else if(!strcmp(value, "poll"))
             {
-                
+                struct pollfd pfd;
+
             }
         break;
         default:
