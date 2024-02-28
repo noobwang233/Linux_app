@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define CONFIG_CMD  0
-#define WRITE_CMD   1
-#define READ_CMD    2
-#define TRIGGER_CMD 3
+#define CMD_CONFIG  0
+#define CMD_WRITE   1
+#define CMD_READ    2
+#define CMD_TRIGGER 3
 
 #define CONFIG_VALUE_IN  0
 #define CONFIG_VALUE_OUT 1
@@ -20,11 +20,15 @@
 
 #define GPIO_NUM_MAX 160
 #define GPIO_NUM_MIN 0
+
+#define USAGE_DEFAULT_CMD   "<config/write/read/trigger>"
+#define USAGE_DEFAULT_GPIOS "gpiox(0 <= x <= 160)"
+#define USAGE_DEFAULT_VALUE "<value>"
 #define USAGE_ERROR(cmd, gpios, value) do{ \
                                         printf("usage error, usage: %s %s %s %s\n", argv[0],\
-                                                (((cmd) == NULL) ? "<config/write/read/trigger>" : cmd), \
-                                                (((gpios) == NULL) ? "gpiox(0 <= x <= 160)" : gpios), \
-                                                (((value) == NULL) ? "<value>" : value));\
+                                                (((cmd) == NULL) ? USAGE_DEFAULT_CMD : cmd), \
+                                                (((gpios) == NULL) ? USAGE_DEFAULT_GPIOS : gpios), \
+                                                (((value) == NULL) ? USAGE_DEFAULT_VALUE : value));\
                                 }while(0)
 
 static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
@@ -38,7 +42,7 @@ static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
         if (!strcmp(argv[1], "read")) 
         {
             cmds = argv[1];
-            *cmd = READ_CMD;
+            *cmd = CMD_READ;
             if(argc != 3 || strncmp(argv[2], "gpio", 4))
             {
                 goto USAGEERROR;
@@ -47,7 +51,7 @@ static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
         else if (!strcmp(argv[1], "write")) 
         {
             cmds = argv[1];
-            *cmd = WRITE_CMD;
+            *cmd = CMD_WRITE;
             if(argc != 4 || strncmp(argv[2], "gpio", 4))
             {
                 goto USAGEERROR;
@@ -63,7 +67,7 @@ static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
         else if (!strcmp(argv[1], "config")) 
         {
             cmds = argv[1];
-            *cmd = CONFIG_CMD;
+            *cmd = CMD_CONFIG;
             if(argc != 4 || strncmp(argv[2], "gpio", 4))
             {
                 goto USAGEERROR;
@@ -87,7 +91,7 @@ static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
         else if (!strcmp(argv[1], "trigger")) 
         {
             cmds = argv[1];
-            *cmd = TRIGGER_CMD;
+            *cmd = CMD_TRIGGER;
             if(argc != 4 || strncmp(argv[2], "gpio", 4))
             {
                 goto USAGEERROR;
@@ -111,7 +115,7 @@ static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
             }
             else 
             {
-                values = "<in/out>";
+                values = "<none/both/rising/falling>";
                 goto USAGEERROR;
             }
             values = argv[3];
@@ -126,14 +130,18 @@ static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
     {
         goto USAGEERROR;
     }
-
-    gpios = &argv[2][3];
-    *gpio = atoi(gpios);
-    if((*gpio) > GPIO_NUM_MAX || (*gpio) < GPIO_NUM_MIN)
+    if(argv[2][4] < '0' || argv[2][4] > '9')
     {
         goto USAGEERROR;
     }
-
+    gpios = &argv[2][4];
+    *gpio = atoi(gpios);
+    printf("gpios: %s, gpio num: %d\n", gpios, *gpio);
+    if((*gpio) > GPIO_NUM_MAX || (*gpio) < GPIO_NUM_MIN)
+    {
+        gpios = USAGE_DEFAULT_GPIOS;
+        goto USAGEERROR;
+    }
     return 0;
 
 USAGEERROR:
@@ -152,11 +160,26 @@ int main(int argc, char *argv[])
         printf("check args error, exit\n");
         exit(1);
     }
-    // if (strcmp(cmd, "")) 
-    // {
-
-    // }
-
+    switch (cmd) 
+    {
+        case CMD_TRIGGER:
+            ret = GpioTrigger(gpio, value);
+        break;
+        case CMD_CONFIG:
+            ret = GpioConfig(gpio, value);
+        break;
+        case CMD_WRITE:
+            ret = GpioWrite(gpio, value);
+        break;
+        case CMD_READ:
+            ret = GpioRead(gpio);
+        break;
+    }
+    if(ret != 0)
+    {
+        printf("working error, exit\n");
+        exit(1);
+    }
     exit(0);
 }
 
