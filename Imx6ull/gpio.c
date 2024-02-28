@@ -103,7 +103,7 @@ static int CheckArg(int argc, char *argv[], int *cmd)
         goto USAGEERROR;
     }
     gpios = &argv[2][4];
-    printf("gpios:%s, gpio num: %d\n", gpios, atoi(gpios));
+    //printf("gpios:%s, gpio num: %d\n", gpios, atoi(gpios));
     if((atoi(gpios)) > GPIO_NUM_MAX || (atoi(gpios)) < GPIO_NUM_MIN)
     {
         goto USAGEERROR;
@@ -128,7 +128,7 @@ static int exportGpiox(char *gpios, int cmd)
     }
     strcat(pathname, GPIO_PATH);
     strcat(pathname, gpios);
-    printf("gpio pathname = %s\n", pathname);
+    //printf("gpio pathname = %s\n", pathname);
 
     //check /sys/class/gpio/gpiox
     if (access(pathname, F_OK)) 
@@ -252,7 +252,7 @@ static int GpioWork(char *gpios, char *value, int cmd)
     strcat(pathname, GPIO_PATH);
     strcat(pathname, gpios);
     strcat(pathname, filename);
-    printf("file pathname = %s\n", pathname);
+    //printf("file pathname = %s\n", pathname);
     switch (cmd) 
     {
         case CMD_CONFIG:      
@@ -286,7 +286,7 @@ static int GpioWork(char *gpios, char *value, int cmd)
                     perror("read");
                     goto CLOSE_FD;
                 }
-                printf("%s value = %c", gpios, read_value);
+                printf("%s value = %c\n", gpios, read_value);
             }
             else 
             {
