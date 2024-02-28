@@ -44,9 +44,9 @@ static int CheckArg(int argc, char *argv[], int *cmd)
         {
             cmds = argv[1];
             *cmd = CMD_READ;
-            if(strcmp(argv[3], "noblock") && strcmp(argv[3], "poll"))
+            if(strcmp(argv[3], "noblock") && strcmp(argv[3], "poll") && strcmp(argv[3], "async"))
             {
-                values = "<noblock/poll>";
+                values = "<noblock/poll/async>";
                 goto USAGEERROR;
             }
         }
@@ -226,13 +226,7 @@ static int GpioWork(char *gpios, char *value, int cmd)
     char *pathname;
     char *filename;
     char read_value;
-    //access gpiox path
-    ret = exportGpiox(gpios, EXPORT_GPIO);
-    if(ret)
-    {
-        printf("export %s error\n", gpios);
-        return -1;
-    }
+
     switch (cmd) 
     {
         case CMD_CONFIG:
@@ -242,12 +236,29 @@ static int GpioWork(char *gpios, char *value, int cmd)
             filename = "/edge";
         break;
         case CMD_WRITE:
+            ret = GpioWork(gpios, "out", CMD_CONFIG);
+            if(ret)
+                return -1;
+            filename = "/value";
+        break;
         case CMD_READ:
+            ret = GpioWork(gpios, "in", CMD_CONFIG);
+            if(ret)
+                return -1;
             filename = "/value";
         break;
         default:
         break;
     }
+
+    //access gpiox path
+    ret = exportGpiox(gpios, EXPORT_GPIO);
+    if(ret)
+    {
+        printf("export %s error\n", gpios);
+        return -1;
+    }
+
     pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);
     strcat(pathname, GPIO_PATH);
     strcat(pathname, gpios);
