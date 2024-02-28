@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define CMD_CONFIG  0
 #define CMD_WRITE   1
@@ -24,6 +25,9 @@
 #define USAGE_DEFAULT_CMD   "<config/write/read/trigger>"
 #define USAGE_DEFAULT_GPIOS "gpiox(0 <= x <= 160)"
 #define USAGE_DEFAULT_VALUE "<value>"
+
+#define GPIO_PATH "/sys/class/gpio/"
+
 #define USAGE_ERROR(cmd, gpios, value) do{ \
                                         printf("usage error, usage: %s %s %s %s\n", argv[0],\
                                                 (((cmd) == NULL) ? USAGE_DEFAULT_CMD : cmd), \
@@ -148,7 +152,35 @@ USAGEERROR:
     USAGE_ERROR(cmds, gpios ,values);
     return -1;
 }
+static int GpioTrigger(int gpio, char *gpios, int value)
+{
+    int ret;
+    char *pathname = (char *)malloc(sizeof(GPIO_PATH) + sizeof(gpios) - 1);
+    if(pathname == NULL)
+    {
+        perror("malloc error");
+    }
+    strcat(pathname, GPIO_PATH);
+    strcat(pathname, gpios);
+    printf("gpio pathname = %s", pathname);
 
+    //check /sys/class/gpio/gpiox
+    if (access(pathname, F_OK)) 
+    {
+        printf("%s file doesn't exits\n", pathname);
+    }
+    else 
+    {
+        printf("%s file exits\n", pathname);
+    }
+    if(pathname != NULL)
+        free(pathname);
+    return 0;
+// FREE:
+//     if(pathname != NULL)
+//         free(pathname);
+//     return -1;
+}
 
 int main(int argc, char *argv[])
 {
@@ -163,16 +195,18 @@ int main(int argc, char *argv[])
     switch (cmd) 
     {
         case CMD_TRIGGER:
-            ret = GpioTrigger(gpio, value);
+            ret = GpioTrigger(gpio, argv[2], value);
         break;
-        case CMD_CONFIG:
-            ret = GpioConfig(gpio, value);
-        break;
-        case CMD_WRITE:
-            ret = GpioWrite(gpio, value);
-        break;
-        case CMD_READ:
-            ret = GpioRead(gpio);
+        // case CMD_CONFIG:
+        //     ret = GpioConfig(gpio, argv[2], value);
+        // break;
+        // case CMD_WRITE:
+        //     ret = GpioWrite(gpio, argv[2],value);
+        // break;
+        // case CMD_READ:
+        //     ret = GpioRead(gpio, argv[2]);
+        // break;
+        default:
         break;
     }
     if(ret != 0)
