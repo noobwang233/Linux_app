@@ -49,16 +49,15 @@ static int CheckArg(int argc, char *argv[], int *cmd)
     char *values = NULL;
     char *gpios =NULL;
 
-    if(argc >= 3)
+    if(argc == 4)
     {
         if (!strcmp(argv[1], "read")) 
         {
             cmds = argv[1];
             *cmd = CMD_READ;
-            values = "";
-            if(argc != 3 || strncmp(argv[2], "gpio", 4))
+            if(strcmp(argv[3], "noblock") && strcmp(argv[3], "poll"))
             {
-                values = "";
+                values = "<noblock/poll>";
                 goto USAGEERROR;
             }
         }
@@ -66,11 +65,7 @@ static int CheckArg(int argc, char *argv[], int *cmd)
         {
             cmds = argv[1];
             *cmd = CMD_WRITE;
-            if(argc != 4 || strncmp(argv[2], "gpio", 4))
-            {
-                values = "<0/1>";
-                goto USAGEERROR;
-            }
+
             if (strcmp(argv[3], "1") && strcmp(argv[3], "0")) 
             {
                 values = "<0/1>";
@@ -81,11 +76,6 @@ static int CheckArg(int argc, char *argv[], int *cmd)
         {
             cmds = argv[1];
             *cmd = CMD_CONFIG;
-            if(argc != 4 || strncmp(argv[2], "gpio", 4))
-            {
-                values = "<in/out>";
-                goto USAGEERROR;
-            }
 
             if(strcmp(argv[3], "in") && strcmp(argv[3], "out"))
             {
@@ -97,11 +87,6 @@ static int CheckArg(int argc, char *argv[], int *cmd)
         {
             cmds = argv[1];
             *cmd = CMD_TRIGGER;
-            if(argc != 4 || strncmp(argv[2], "gpio", 4))
-            {
-                values = "<none/both/rising/falling>";
-                goto USAGEERROR;
-            }
 
             if(strcmp(argv[3], "none") && strcmp(argv[3], "both") && strcmp(argv[3], "rising") && strcmp(argv[3], "falling"))
             {
@@ -116,6 +101,11 @@ static int CheckArg(int argc, char *argv[], int *cmd)
 
     }
     else
+    {
+        goto USAGEERROR;
+    }
+
+    if(strncmp(argv[2], "gpio", 4))
     {
         goto USAGEERROR;
     }
@@ -170,7 +160,7 @@ static int exportGpiox(char *gpios, int cmd)
         }
         gpioNum = &gpios[4];
         ret = write(fd, gpioNum, strlen(gpioNum) + 1);
-        if(fd < 0)
+        if(ret < 0)
         {
             perror("write");
             goto FREE_MALLOC;
