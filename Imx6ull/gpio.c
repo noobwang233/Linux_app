@@ -1,7 +1,10 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h> 
+#include <sys/stat.h>
 
 #define CMD_CONFIG  0
 #define CMD_WRITE   1
@@ -27,18 +30,18 @@
 #define USAGE_DEFAULT_VALUE "<value>"
 
 #define GPIO_PATH "/sys/class/gpio/"
+#define GPIO_EXPORT_PATH "/sys/class/gpio/export"
 
-#define USAGE_ERROR(cmd, gpios, value) do{ \
+#define USAGE_ERROR(cmd, value) do{ \
                                         printf("usage error, usage: %s %s %s %s\n", argv[0],\
                                                 (((cmd) == NULL) ? USAGE_DEFAULT_CMD : cmd), \
-                                                (((gpios) == NULL) ? USAGE_DEFAULT_GPIOS : gpios), \
+                                                USAGE_DEFAULT_GPIOS,\
                                                 (((value) == NULL) ? USAGE_DEFAULT_VALUE : value));\
                                 }while(0)
-
-static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
+#define ASSERT(x, flag) do{if((x) < 0){ perror(""); goto (flag)}}while (0)
+static int CheckArg(int argc, char *argv[], int *cmd, char **gpios, int *value)
 {
     char *cmds = NULL;
-    char *gpios = NULL;
     char *values = NULL;
 
     if(argc >= 3)
@@ -138,55 +141,76 @@ static int CheckArg(int argc, char *argv[], int *cmd, int *gpio, int *value)
     {
         goto USAGEERROR;
     }
-    gpios = &argv[2][4];
-    *gpio = atoi(gpios);
-    printf("gpios: %s, gpio num: %d\n", gpios, *gpio);
-    if((*gpio) > GPIO_NUM_MAX || (*gpio) < GPIO_NUM_MIN)
+    *gpios = &argv[2][4];
+    printf("gpios: %s, gpio num: %d\n", *gpios, atoi(*gpios));
+    if((atoi(*gpios)) > GPIO_NUM_MAX || (atoi(*gpios)) < GPIO_NUM_MIN)
     {
-        gpios = USAGE_DEFAULT_GPIOS;
         goto USAGEERROR;
     }
     return 0;
 
 USAGEERROR:
-    USAGE_ERROR(cmds, gpios ,values);
+    USAGE_ERROR(cmds, values);
     return -1;
 }
-static int GpioTrigger(int gpio, char *gpios, int value)
+
+static int openGpiox(char *gpios, int cmd)
 {
     int ret;
-    char *pathname = (char *)malloc(sizeof(GPIO_PATH) + sizeof(gpios) - 1);
+    int exportFd;
+
+    char *pathname = (char *)malloc(sizeof(GPIO_PATH) + sizeof("gpio") + strlen(gpios));
     if(pathname == NULL)
     {
         perror("malloc error");
     }
     strcat(pathname, GPIO_PATH);
+    strcat(pathname, "gpio");
     strcat(pathname, gpios);
-    printf("gpio pathname = %s", pathname);
+    printf("gpio pathname = %s\n", pathname);
 
     //check /sys/class/gpio/gpiox
-    if (access(pathname, F_OK)) 
+    if (!access(pathname, F_OK)) 
     {
-        printf("%s file doesn't exits\n", pathname);
+        //printf("%s file doesn't exits\n", pathname);
+        //export gpiox
+        exportFd = open(GPIO_EXPORT_PATH, O_WRONLY);
+        ASSERT(exportFd, FREE_MALLOC);
+        ret = write(exportFd, gpios, strlen(gpios));
+        ASSERT(exportFd, FREE_MALLOC);
+        if (!access(pathname, F_OK)) 
+        {
+            printf("can not export gpio%s\n", gpios);
+            goto FREE_MALLOC;
+        }
     }
-    else 
-    {
-        printf("%s file exits\n", pathname);
-    }
+    
+
+
     if(pathname != NULL)
         free(pathname);
     return 0;
-// FREE:
-//     if(pathname != NULL)
-//         free(pathname);
-//     return -1;
+FREE_MALLOC:
+    if(pathname != NULL)
+        free(pathname);
+    return -1;
+}
+
+static int GpioTrigger(char *gpios, int value)
+{
+    int ret;
+    //open gpiox path
+    ret = openGpiox(gpios, CMD_TRIGGER);
+    ASSERT(ret);
+
 }
 
 int main(int argc, char *argv[])
 {
-    int ret, cmd, gpio, value;
+    int ret, cmd, value;
+    char *gpios = NULL;
 
-    ret = CheckArg(argc, argv, &cmd, &gpio, &value);
+    ret = CheckArg(argc, argv, &cmd, &gpios, &value);
     if(ret != 0)
     {
         printf("check args error, exit\n");
@@ -195,16 +219,16 @@ int main(int argc, char *argv[])
     switch (cmd) 
     {
         case CMD_TRIGGER:
-            ret = GpioTrigger(gpio, argv[2], value);
+            ret = GpioTrigger(gpios, value);
         break;
         // case CMD_CONFIG:
-        //     ret = GpioConfig(gpio, argv[2], value);
+        //     ret = GpioConfig(gpios, value);
         // break;
         // case CMD_WRITE:
-        //     ret = GpioWrite(gpio, argv[2],value);
+        //     ret = GpioWrite(gpios,value);
         // break;
         // case CMD_READ:
-        //     ret = GpioRead(gpio, argv[2]);
+        //     ret = GpioRead(gpios);
         // break;
         default:
         break;
