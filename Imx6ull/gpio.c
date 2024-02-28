@@ -216,10 +216,11 @@ FREE_MALLOC:
     return -1;
 }
 
-static int GpioWork(char *gpios, char *value)
+static int GpioWork(char *gpios, char *value, int cmd)
 {
     int ret;
     char *pathname;
+    char *filename;
     //access gpiox path
     ret = exportGpiox(gpios, EXPORT_GPIO);
     if(ret)
@@ -227,11 +228,27 @@ static int GpioWork(char *gpios, char *value)
         printf("export %s error\n", gpios);
         return -1;
     }
-    pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen("/edge") + 1);
+    switch (cmd) 
+    {
+        case CMD_CONFIG:
+            filename = "/direction";
+        break;
+        case CMD_TRIGGER:
+            filename = "/edge";
+        break;
+        case CMD_WRITE:
+            filename = "/value";
+        break;
+        case CMD_READ:
+        break;
+        default:
+        break;
+    }
+    pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);
     strcat(pathname, GPIO_PATH);
     strcat(pathname, gpios);
-    strcat(pathname, "/edge");
-    printf("gpio pathname = %s\n", pathname);
+    strcat(pathname, filename);
+    printf("file pathname = %s\n", pathname);
     ret = open(pathname, O_WRONLY);
     if (ret < 0) 
     {
@@ -263,23 +280,8 @@ int main(int argc, char *argv[])
         printf("check args error, exit\n");
         exit(1);
     }
-    switch (cmd) 
-    {
-        case CMD_TRIGGER:
-            ret = GpioWork(argv[2], argv[3]);
-        break;
-        // case CMD_CONFIG:
-        //     ret = GpioConfig(gpios, value);
-        // break;
-        // case CMD_WRITE:
-        //     ret = GpioWrite(gpios,value);
-        // break;
-        // case CMD_READ:
-        //     ret = GpioRead(gpios);
-        // break;
-        default:
-        break;
-    }
+
+    ret = GpioWork(argv[2], argv[3], cmd);
     if(ret != 0)
     {
         printf("working error, exit\n");
