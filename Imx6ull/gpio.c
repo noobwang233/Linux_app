@@ -133,9 +133,10 @@ static int exportGpiox(char *gpios, int cmd)
     //check /sys/class/gpio/gpiox
     if (access(pathname, F_OK)) 
     {
-        //printf("%s file doesn't exits\n", pathname);
+        
         if(cmd == UNEXPORT_GPIO)
         {
+            printf("%s has been unexport\n", gpios);
             if(pathname != NULL)
                 free(pathname);
             return 0;
@@ -159,12 +160,14 @@ static int exportGpiox(char *gpios, int cmd)
             printf("can not export %s\n", gpios);
             goto FREE_MALLOC;
         }
+        printf("export %s successfully\n", gpios);
     }
     else 
     {
         //printf("%s file exits\n", pathname);
         if(cmd == EXPORT_GPIO)
         {
+            printf("%s has been export\n", gpios);
             if(pathname != NULL)
                 free(pathname);
             return 0;
@@ -188,6 +191,7 @@ static int exportGpiox(char *gpios, int cmd)
             printf("can not unexport %s\n", gpios);
             goto FREE_MALLOC;
         }
+        printf("unexport %s successfully\n", gpios);
     }
 
     if(fd > 0)
@@ -218,7 +222,7 @@ FREE_MALLOC:
 
 static int GpioWork(char *gpios, char *value, int cmd)
 {
-    int ret;
+    int ret, fd;
     char *pathname;
     char *filename;
     //access gpiox path
@@ -237,9 +241,8 @@ static int GpioWork(char *gpios, char *value, int cmd)
             filename = "/edge";
         break;
         case CMD_WRITE:
-            filename = "/value";
-        break;
         case CMD_READ:
+            filename = "/value";
         break;
         default:
         break;
@@ -249,13 +252,13 @@ static int GpioWork(char *gpios, char *value, int cmd)
     strcat(pathname, gpios);
     strcat(pathname, filename);
     printf("file pathname = %s\n", pathname);
-    ret = open(pathname, O_WRONLY);
-    if (ret < 0) 
+    fd = open(pathname, O_WRONLY);
+    if (fd < 0) 
     {
         perror("open");
         goto FREE_MALLOC;
     }
-    ret = 0;
+    ret = write(int fd, const void *buf, size_t n);
 
     ret = exportGpiox(gpios, UNEXPORT_GPIO);
     if(ret)
