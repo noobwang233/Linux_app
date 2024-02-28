@@ -225,6 +225,7 @@ static int GpioWork(char *gpios, char *value, int cmd)
     int ret, fd;
     char *pathname;
     char *filename;
+    char read_value;
     //access gpiox path
     ret = exportGpiox(gpios, EXPORT_GPIO);
     if(ret)
@@ -258,7 +259,42 @@ static int GpioWork(char *gpios, char *value, int cmd)
         perror("open");
         goto FREE_MALLOC;
     }
-    ret = write(int fd, const void *buf, size_t n);
+    switch (cmd) 
+    {
+        case CMD_CONFIG:      
+        case CMD_TRIGGER:
+        case CMD_WRITE:
+            ret = write(fd, value, strlen(value)+1);
+            if(ret != strlen(value)+1)
+            {
+                perror("write");
+                goto CLOSE_FD;
+            }
+        break;
+        case CMD_READ:
+            if(!strcmp(value, "noblock"))
+            {
+                ret = read(fd, &read_value, 1);
+                if(ret != 1)
+                {
+                    perror("write");
+                    goto CLOSE_FD;
+                }
+                printf("%s value = %c", gpios, read_value);
+            }
+            else 
+            {
+                
+            }
+        break;
+        default:
+        break;
+    }
+
+
+    ret = close(fd);
+    if(ret)
+        perror("close");
 
     ret = exportGpiox(gpios, UNEXPORT_GPIO);
     if(ret)
@@ -267,6 +303,14 @@ static int GpioWork(char *gpios, char *value, int cmd)
         goto FREE_MALLOC;
     }
     return 0;
+
+CLOSE_FD:
+    if(fd > 0)
+    {
+        ret = close(fd);
+        if(ret)
+            perror("close");
+    }
 FREE_MALLOC:
     if(pathname != NULL)
         free(pathname);
