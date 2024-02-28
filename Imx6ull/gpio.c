@@ -253,17 +253,17 @@ static int GpioWork(char *gpios, char *value, int cmd)
     strcat(pathname, gpios);
     strcat(pathname, filename);
     printf("file pathname = %s\n", pathname);
-    fd = open(pathname, O_WRONLY);
-    if (fd < 0) 
-    {
-        perror("open");
-        goto FREE_MALLOC;
-    }
     switch (cmd) 
     {
         case CMD_CONFIG:      
         case CMD_TRIGGER:
         case CMD_WRITE:
+            fd = open(pathname, O_WRONLY);
+            if (fd < 0) 
+            {
+                perror("open");
+                goto FREE_MALLOC;
+            }
             ret = write(fd, value, strlen(value)+1);
             if(ret != strlen(value)+1)
             {
@@ -272,12 +272,18 @@ static int GpioWork(char *gpios, char *value, int cmd)
             }
         break;
         case CMD_READ:
+            fd = open(pathname, O_RDONLY);
+            if (fd < 0) 
+            {
+                perror("open");
+                goto FREE_MALLOC;
+            }
             if(!strcmp(value, "noblock"))
             {
                 ret = read(fd, &read_value, 1);
                 if(ret != 1)
                 {
-                    perror("write");
+                    perror("read");
                     goto CLOSE_FD;
                 }
                 printf("%s value = %c", gpios, read_value);
