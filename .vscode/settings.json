@@ -11,6 +11,8 @@
     "cSpell.words": [
         "gpios",
         "gpiox",
-        "sigact"
+        "sigact",
+        "UNACCESS",
+        "UNEXPORT"
     ]
 }
