@@ -12,6 +12,7 @@
 #define CMD_WRITE   1
 #define CMD_READ    2
 #define CMD_TRIGGER 3
+#define CMD_UNEXPORT 6
 
 #define GPIO_NUM_MAX 160
 #define GPIO_NUM_MIN 0
@@ -40,7 +41,16 @@ static int CheckArg(int argc, char *argv[], int *cmd)
     char *values = NULL;
     char *gpios =NULL;
 
-    if(argc == 4)
+    if(argc == 3)
+    {
+        if (!strcmp(argv[1], "unexport")) 
+        {
+            cmds = argv[1];
+            *cmd = CMD_UNEXPORT;
+            values = "";
+        }
+    }
+    else if(argc == 4)
     {
         if (!strcmp(argv[1], "read")) 
         {
@@ -233,9 +243,9 @@ FREE_MALLOC:
 static int GpioWork(char *gpios, char *value, int cmd)
 {
     int ret, fd;
-    char *pathname;
-    char *filename;
-    char read_value;
+    char *pathname = NULL;
+    char *filename = NULL;
+    char read_value = 0;
 
     switch (cmd) 
     {
@@ -254,6 +264,9 @@ static int GpioWork(char *gpios, char *value, int cmd)
             }
         break;
         case CMD_TRIGGER:
+            ret = GpioWork(gpios, "in", CMD_CONFIG_DIR);
+            if(ret)
+                return -1;
             filename = "/edge";
         break;
         case CMD_WRITE:
@@ -263,12 +276,22 @@ static int GpioWork(char *gpios, char *value, int cmd)
             filename = "/value";
         break;
         case CMD_READ:
-            ret = GpioWork(gpios, "in", CMD_CONFIG_DIR);
-            if(ret)
-                return -1;
+            // ret = GpioWork(gpios, "in", CMD_CONFIG_DIR);
+            // if(ret)
+            //     return -1;
             filename = "/value";
         break;
+        case CMD_UNEXPORT:
+            ret = exportGpiox(gpios, UNEXPORT_GPIO);
+            if(ret)
+            {
+                printf("unexport Gpio%s error\n", gpios);
+                goto FREE_MALLOC;
+            }
+            return 0;
+        break;
         default:
+            filename = NULL;
         break;
     }
 
@@ -335,13 +358,6 @@ static int GpioWork(char *gpios, char *value, int cmd)
     ret = close(fd);
     if(ret)
         perror("close");
-
-    ret = exportGpiox(gpios, UNEXPORT_GPIO);
-    if(ret)
-    {
-        printf("unexport Gpio%s error\n", gpios);
-        goto FREE_MALLOC;
-    }
     return 0;
 
 CLOSE_FD:
