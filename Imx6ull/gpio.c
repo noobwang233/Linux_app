@@ -276,9 +276,9 @@ static int GpioWork(char *gpios, char *value, int cmd)
             filename = "/value";
         break;
         case CMD_READ:
-            // ret = GpioWork(gpios, "in", CMD_CONFIG_DIR);
-            // if(ret)
-            //     return -1;
+            ret = GpioWork(gpios, "in", CMD_CONFIG_DIR);
+            if(ret)
+                return -1;
             filename = "/value";
         break;
         case CMD_UNEXPORT:
