@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -35,6 +36,23 @@
                                                 (((value) == NULL) ? USAGE_DEFAULT_VALUE : value));\
                                 }while(0)
 #define ASSERT(x, flag) do{if((x) < 0){ perror(""); goto (flag);}}while (0)
+
+static char* gpio;
+
+static void irq_handler(int signal);
+static int CheckArg(int argc, char *argv[], int *cmd);
+static int exportGpiox(char *gpios, int cmd);
+static int GpioWork(char *gpios, char *value, int cmd);
+
+static void irq_handler(int signal)
+{
+    if(signal == SIGIO)
+    {
+        GpioWork(gpio, "noblock", CMD_READ);
+    }
+
+}
+
 static int CheckArg(int argc, char *argv[], int *cmd)
 {
     char *cmds = NULL;
@@ -146,6 +164,7 @@ static int exportGpiox(char *gpios, int cmd)
     {
         perror("malloc error");
     }
+    memset(pathname, 0, strlen(pathname) + 1);
     strcat(pathname, GPIO_PATH);
     strcat(pathname, gpios);
     //printf("gpio pathname = %s\n", pathname);
@@ -304,6 +323,11 @@ static int GpioWork(char *gpios, char *value, int cmd)
     }
 
     pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);
+    if(pathname == NULL)
+    {
+        perror("malloc error");
+    }
+    memset(pathname, 0, strlen(pathname) + 1);
     strcat(pathname, GPIO_PATH);
     strcat(pathname, gpios);
     strcat(pathname, filename);
@@ -328,14 +352,14 @@ static int GpioWork(char *gpios, char *value, int cmd)
             }
         break;
         case CMD_READ:
-            fd = open(pathname, O_RDONLY);
-            if (fd < 0) 
-            {
-                perror("open");
-                goto FREE_MALLOC;
-            }
             if(!strcmp(value, "noblock"))
             {
+                fd = open(pathname, O_RDONLY);
+                if (fd < 0) 
+                {
+                    perror("open");
+                    goto FREE_MALLOC;
+                }
                 ret = read(fd, &read_value, 1);
                 if(ret != 1)
                 {
@@ -347,14 +371,112 @@ static int GpioWork(char *gpios, char *value, int cmd)
             else if(!strcmp(value, "poll"))
             {
                 struct pollfd pfd;
+                //check irq
+                if(pathname != NULL)
+                {
+                    free(pathname);
+                }
 
+                filename = "/edge";
+                pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);
+                if(pathname == NULL)
+                {
+                    perror("malloc error");
+                }
+                memset(pathname, 0, strlen(pathname) + 1);
+                strcat(pathname, GPIO_PATH);
+                strcat(pathname, gpios);
+                strcat(pathname, filename);
+
+                fd = open(pathname, O_WRONLY);
+                if (fd < 0) 
+                {
+                    perror("open");
+                    goto FREE_MALLOC;
+                }
+
+                char buff[10] = {0};
+                ret = read(fd, buff, sizeof(buff));
+                if(ret <= 0)
+                {
+                    perror("read");
+                    goto CLOSE_FD;
+                }
+                if(!strcmp(buff, "none"))
+                {
+                    printf("please config trigger first\n");
+                    goto CLOSE_FD;
+                }
+            }
+            else if(!strcmp(value, "async"))
+            {
+                //check irq
+                if(pathname != NULL)
+                {
+                    free(pathname);
+                }
+
+                filename = "/edge";
+                pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);
+                if(pathname == NULL)
+                {
+                    perror("malloc error");
+                }
+                memset(pathname, 0, strlen(pathname) + 1);
+                strcat(pathname, GPIO_PATH);
+                strcat(pathname, gpios);
+                strcat(pathname, filename);
+
+                fd = open(pathname, O_RDONLY);
+                if (fd < 0) 
+                {
+                    perror("open");
+                    goto FREE_MALLOC;
+                }
+
+                char buff[4] = {0};
+                ret = read(fd, buff, 4);
+                if(ret <= 0)
+                {
+                    perror("read");
+                    goto CLOSE_FD;
+                }
+                if(!strncmp(buff, "none", 4))
+                {
+                    printf("please config trigger first, usage: tirgger gpiox <none/both/rising/falling>\n");
+                    goto CLOSE_FD;
+                }
+                ret = close(fd);
+                if(ret)
+                    perror("close");
+
+                signal(SIGIO, irq_handler);
+                if(gpio != NULL)
+                {
+                    free(gpio);
+                }
+                gpio = (char *)malloc(strlen(gpios) + 1);
+                if(gpio == NULL)
+                {
+                    perror("malloc error");
+                }
+                memset(gpio, 0, strlen(gpio) + 1);
+                strcat(gpio, gpios);
+                while (1) 
+                {
+                    sleep(1);
+                }
+            }
+            else 
+            {
+            
             }
         break;
         default:
         break;
     }
-
-
+    if(pathname != NULL)
+        free(pathname);
     ret = close(fd);
     if(ret)
         perror("close");
