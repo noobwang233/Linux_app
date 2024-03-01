@@ -35,6 +35,18 @@
                                                 USAGE_DEFAULT_GPIOS,\
                                                 (((value) == NULL) ? USAGE_DEFAULT_VALUE : value));\
                                 }while(0)
+#define COMBINEPATH(pathname, gpios, filename) do{\
+                                                    pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);\
+                                                    if(pathname == NULL)\
+                                                    {\
+                                                        perror("malloc error");\
+                                                    }\
+                                                    memset(pathname, 0, strlen(pathname) + 1);\
+                                                    strcat(pathname, GPIO_PATH);\
+                                                    strcat(pathname, gpios);\
+                                                    strcat(pathname, filename);\
+                                                }while(0)
+
 #define ASSERT(x, flag) do{if((x) < 0){ perror(""); goto (flag);}}while (0)
 
 static char* gpio;
@@ -159,15 +171,9 @@ static int exportGpiox(char *gpios, int cmd)
     int fd;
     char *gpioNum;
 
-    char *pathname = (char *)malloc(sizeof(GPIO_PATH)+ strlen(gpios));
-    if(pathname == NULL)
-    {
-        perror("malloc error");
-    }
-    memset(pathname, 0, strlen(pathname) + 1);
-    strcat(pathname, GPIO_PATH);
-    strcat(pathname, gpios);
-    //printf("gpio pathname = %s\n", pathname);
+    char *pathname = NULL;
+    COMBINEPATH(pathname, gpios, "");
+    printf("gpio pathname = %s\n", pathname);
 
     //check /sys/class/gpio/gpiox
     if (access(pathname, F_OK)) 
@@ -310,7 +316,7 @@ static int GpioWork(char *gpios, char *value, int cmd)
             return 0;
         break;
         default:
-            filename = NULL;
+            filename = "";
         break;
     }
 
@@ -322,16 +328,8 @@ static int GpioWork(char *gpios, char *value, int cmd)
         return -1;
     }
 
-    pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);
-    if(pathname == NULL)
-    {
-        perror("malloc error");
-    }
-    memset(pathname, 0, strlen(pathname) + 1);
-    strcat(pathname, GPIO_PATH);
-    strcat(pathname, gpios);
-    strcat(pathname, filename);
-    //printf("file pathname = %s\n", pathname);
+    COMBINEPATH(pathname, gpios, filename);
+    printf("file pathname = %s\n", pathname);
     switch (cmd) 
     {
         case CMD_CONFIG_DIR:
@@ -377,15 +375,7 @@ static int GpioWork(char *gpios, char *value, int cmd)
             }
 
             filename = "/edge";
-            pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);
-            if(pathname == NULL)
-            {
-                perror("malloc error");
-            }
-            memset(pathname, 0, strlen(pathname) + 1);
-            strcat(pathname, GPIO_PATH);
-            strcat(pathname, gpios);
-            strcat(pathname, filename);
+            COMBINEPATH(pathname, gpios, filename);
 
             fd = open(pathname, O_RDONLY);
             if (fd < 0) 
@@ -417,15 +407,7 @@ static int GpioWork(char *gpios, char *value, int cmd)
                 free(pathname);
             }
             filename = "/value";
-            pathname = (char *)malloc(strlen(GPIO_PATH) + strlen(gpios) + strlen(filename) + 1);
-            if(pathname == NULL)
-            {
-                perror("malloc error");
-            }
-            memset(pathname, 0, strlen(pathname) + 1);
-            strcat(pathname, GPIO_PATH);
-            strcat(pathname, gpios);
-            strcat(pathname, filename);
+            COMBINEPATH(pathname, gpios, filename);
 
             fd = open(pathname, O_RDONLY);
             if (fd < 0) 
@@ -437,6 +419,36 @@ static int GpioWork(char *gpios, char *value, int cmd)
 
             if(!strcmp(value, "poll"))
             {
+                struct pollfd pfd;
+                pfd.fd = fd;
+                pfd.events = POLLPRI;
+                while(1)
+                {
+                    ret = poll(&pfd, 1, -1);
+                    if(ret < 0)
+                    {
+                        perror("poll");
+                        goto CLOSE_FD;
+                    }
+                    else if(ret > 0)
+                    {
+                        if(pfd.revents & POLLPRI) 
+                        {
+                            lseek(fd, 0, SEEK_SET);
+                            ret = read(fd, &read_value, 1);
+                            if(ret != 1)
+                            {
+                                perror("read");
+                                goto CLOSE_FD;
+                            }
+                            printf("%s value = %c\n", gpios, read_value);
+                        }
+                    }
+                    else 
+                    {
+                        printf("time out\n");
+                    }
+                }
 
             }
             else if(!strcmp(value, "async"))
