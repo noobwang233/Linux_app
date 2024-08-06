@@ -1,3 +1,4 @@
 #!/bin/bash
 echo "file name: " $1
-arm-linux-gnueabihf-gcc $1 -o ./output/test
+bear -- gcc $1 -o ./output/test
+# arm-linux-gnueabihf-gcc $1 -o ./output/test
